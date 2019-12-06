@@ -1,0 +1,111 @@
+---
+title: "Cluster Analysis"
+author: "Illarion Jabine"
+date: "06/12/2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Cluster Analysis in R 
+
+In this document we will go through two classical cluster analysis methodes: hierarchical and  K-means. There are other cluster methodes which will be discussed in other documents.
+
+## 1. Hierarchical Cluster 
+
+```{r load, echo=TRUE}
+# let's load a dimonds dataset from ggplot2 
+library(ggplot2)
+data(diamonds)
+summary(diamonds)
+dim(diamonds)
+str(diamonds)
+```
+
+Now if I try to run the hierarchical clustering on the full dataset I will get "Error: cannot allocate vector of size 10.8 Gb" error message. I simply don not have enough RAM on my PC. So I will just split the dataset into two. I will use simple random split.
+
+
+```{r split dataset, echo=TRUE}
+## [Random Split]
+require(caret);
+require(klaR);
+
+percentage <-  80 / 100
+
+## the sample size
+smp_size <- floor(percentage * nrow(diamonds))
+
+## set the seed to make your partition reproductible
+set.seed(123)
+trainIndex  <- sample(seq_len(nrow(diamonds)),size = smp_size)
+
+traindata <- diamonds[trainIndex,]
+testdata <- diamonds[-trainIndex,]
+```
+
+I will work with testdata dataset from now on.
+
+Now let's calculate the distance matrix, which will be used later by hierarchical clustering. However, we need to exclude all categorical (factor) variables from distance calculation. So, meaning we need to exclude cut, color and clarity variables.
+
+```{r exclude factors, echo=TRUE}
+
+testdata <- testdata[-c(2,3,4)]
+```
+
+Now we can calculate distance matrix. by default the system uses euclidean distance, but there are other distances available (just type ?dist): "euclidean", "maximum", "manhattan", "canberra", "binary" or "minkowski".
+euclidean:
+Usual distance between the two vectors (2 norm aka L_2), sqrt(sum((x_i - y_i)^2)).
+
+maximum:
+Maximum distance between two components of x and y (supremum norm)
+
+manhattan:
+Absolute distance between the two vectors (1 norm aka L_1).
+
+canberra:
+sum(|x_i - y_i| / (|x_i| + |y_i|)). Terms with zero numerator and denominator are omitted from the sum and treated as if the values were missing.
+
+This is intended for non-negative values (e.g., counts), in which case the denominator can be written in various equivalent ways; Originally, R used x_i + y_i, then from 1998 to 2017, |x_i + y_i|, and then the correct |x_i| + |y_i|.
+
+binary:
+(aka asymmetric binary): The vectors are regarded as binary bits, so non-zero elements are ‘on’ and zero elements are ‘off’. The distance is the proportion of bits in which only one is on amongst those in which at least one is on.
+
+minkowski:
+The p norm, the pth root of the sum of the pth powers of the differences of the components.
+
+We will use euclidian disctance, as it's default we don't need to specify it.
+
+```{r echo=TRUE}
+dist_matrix <- dist(x = testdata)
+```
+
+Now we can use the distance matrix in the hierarchical cluster analysis. It is important to understand different methodes used to calculate the clusters:
+Ward's method
+Single linkage
+Complete linkage
+Average linkage
+McQuitty's method
+Median linkage
+Centroid linkage
+We will use default method "complete".
+We will also produce two plots: dendogram and bi plot.
+
+```{r cluster analysis, message=FALSE, warning=FALSE}
+
+h_clust_res <- hclust(dist_matrix)
+
+```
+h_clust_res object of class "hclust" has been created.
+
+Now let's create dendogram and bi plot.
+For dendogram we will use standard "plot" (?plot) function, to generate bi plot we will use biplot and princomp functions (see help(biplot) and help(princomp)). princomp performs a principal components analysis on the given numeric data matrix and returns the results as an object of class princomp.:
+
+```{r cluster analysis plots, message=FALSE, warning=FALSE}
+plot(h_clust_res)
+
+```
+
