@@ -49,12 +49,32 @@ testdata <- diamonds[-trainIndex,]
 
 I will work with testdata dataset from now on.
 
-Now let's calculate the distance matrix, which will be used later by hierarchical clustering. However, we need to exclude all categorical (factor) variables from distance calculation. So, meaning we need to exclude cut, color and clarity variables.
+!!! Very important pre-processing operations for clustering is scaling and normalization of the dataset.
+We can use caret preProcess() function, which gives several options for data pre-processing:
 
-```{r exclude factors, echo=TRUE}
+* “BoxCox“: apply a Box–Cox transform, values must be non-zero and positive.
+* “YeoJohnson“: apply a Yeo-Johnson transform, like a BoxCox, but values can be negative.
+* “expoTrans“: apply a power transform like BoxCox and YeoJohnson.
+* “zv“: remove attributes with a zero variance (all the same value).
+* “nzv“: remove attributes with a near zero variance (close to the same value).
+* “center“: subtract mean from values.
+* “scale“: divide values by standard deviation.
+* “range“: normalize values.
+* “pca“: transform data to the principal components.
+* “ica“: transform data to the independent components.
+* “spatialSign“: project data onto a unit circle.
 
+By combining center and scale methodes we can standardize the data. 
+We need to exclude all categorical (factor) variables from distance calculation. So, meaning we need to exclude cut, color and clarity variables. However, here I will use R standard function scale():
+
+```{r scaling data}
 testdata <- testdata[-c(2,3,4)]
+# The code below is caret way to do scaling
+# testdata_transformed <- preProcess(testdata, method = c("center", "scale"))
+testdata_transformed <- scale(testdata)
+
 ```
+
 
 Now we can calculate distance matrix. by default the system uses euclidean distance, but there are other distances available (just type ?dist): "euclidean", "maximum", "manhattan", "canberra", "binary" or "minkowski".
 euclidean:
@@ -80,17 +100,26 @@ The p norm, the pth root of the sum of the pth powers of the differences of the 
 We will use euclidian disctance, as it's default we don't need to specify it.
 
 ```{r echo=TRUE}
-dist_matrix <- dist(x = testdata)
+dist_matrix <- dist(x = testdata_transformed)
 ```
 
-Now we can use the distance matrix in the hierarchical cluster analysis. It is important to understand different methodes used to calculate the clusters:
+Now we can use the distance matrix in the hierarchical cluster analysis. The way the hierarchical custrering algorith works follows the following logic:
+1. Calculat the distance between every pair of points and store it in a distance matrix.
+2. Assign every point in its own cluster.
+3. Merge the closest pairs of points based on the distances from the distance matrix. At this step the amount of clusters goes down by 1.
+4. Recomputes the distance between the new cluster and the old ones and stores them in a new distance matrix.
+5. Repeat steps 2 and 3 until all the clusters are merged into one single cluster.
+
+
+It is important to understand different methodes used to measure the distance between clusters. Then the algorithm takes the minimum distance to merge the clusters:
 Ward's method
-Single linkage
-Complete linkage
-Average linkage
+Single linkage - calculates the minimum distance between the clusters before merging.
+Complete linkage - calculates the maximum distance between clusters before merging.
+Average linkage - calculates the average distance between clusters before merging
 McQuitty's method
 Median linkage
-Centroid linkage
+Centroid linkage - finds centroid of two clusters and then calculates the distance between the two before merging
+
 We will use default method "complete".
 We will also produce two plots: dendogram and bi plot.
 
@@ -102,10 +131,38 @@ h_clust_res <- hclust(dist_matrix)
 h_clust_res object of class "hclust" has been created.
 
 Now let's create dendogram and bi plot.
-For dendogram we will use standard "plot" (?plot) function, to generate bi plot we will use biplot and princomp functions (see help(biplot) and help(princomp)). princomp performs a principal components analysis on the given numeric data matrix and returns the results as an object of class princomp.:
+For dendogram we will use standard "plot" (?plot) function, to generate bi plot we will use biplot and princomp functions (see help(biplot) and help(princomp)).:
 
 ```{r cluster analysis plots, message=FALSE, warning=FALSE}
 plot(h_clust_res)
+
+# PCA analysis. princomp performs a principal components analysis on the given numeric data matrix and returns the results as an object of class princomp
+pca_result <- princomp(testdata_transformed)
+pca_result
+# Now we can print a biplot:
+biplot(pca_result)
+```
+The good thing about hierarchical clustering is that you can choose whatever number of clusters you want by cutting (by an imaginary horizontal line) the dendrogram in order to create the desired number of clusters. To do that we will use cutree command. For example we want to have three clusters, well for that we need to look at the dendrogram, and find at what Height the horizontal line intersects it three times. In our case it's when heigh is 14:
+```{r cutting  dendrogram, message=FALSE, warning=FALSE}
+cut_tree <- cutree(h_clust_res, k = 3, h = 14)
+# cutree created an integer vector with clusters from 1 to 3.
+
+# Now let's show these clusters and the horizontal line on the plot:
+plot(h_clust_res)
+rect.hclust(h_clust_res, k = 3, border = 2:6)
+abline(h = 14, col = 'yellow')
+
+
+```
+
+Let's assign these clusters to our testdata, and print some cluster plots using ggplot2:
+
+```{r}
+testdata_new <- cbind(testdata,cut_tree)
+testdata_new$cut_tree <- as.factor(testdata_new$cut_tree)
+table(testdata_new$cut_tree)
+testdata_new %>% ggplot(aes(x = carat,y = price, color = cut_tree)) +
+  geom_point()
 
 ```
 
