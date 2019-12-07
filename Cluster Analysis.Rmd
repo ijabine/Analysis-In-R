@@ -17,9 +17,10 @@ In this document we will go through two classical cluster analysis methodes: hie
 
 ## 1. Hierarchical Cluster 
 
-```{r load, echo=TRUE}
+```{r load, echo=TRUE, message=FALSE, warning=FALSE}
 # let's load a dimonds dataset from ggplot2 
-library(ggplot2)
+library(tidyverse)
+
 data(diamonds)
 summary(diamonds)
 dim(diamonds)
@@ -69,9 +70,15 @@ We need to exclude all categorical (factor) variables from distance calculation.
 
 ```{r scaling data}
 testdata <- testdata[-c(2,3,4)]
-# The code below is caret way to do scaling
+# let's check if there are no missing values
+colSums(testdata)
+# The code below is caret way to do scaling, but we will not use it here, just for my info only.
 # testdata_transformed <- preProcess(testdata, method = c("center", "scale"))
 testdata_transformed <- scale(testdata)
+
+# Just to check the scaling
+colMeans(testdata_transformed)
+apply(testdata_transformed,2,sd)
 
 ```
 
@@ -145,6 +152,8 @@ biplot(pca_result)
 The good thing about hierarchical clustering is that you can choose whatever number of clusters you want by cutting (by an imaginary horizontal line) the dendrogram in order to create the desired number of clusters. To do that we will use cutree command. For example we want to have three clusters, well for that we need to look at the dendrogram, and find at what Height the horizontal line intersects it three times. In our case it's when heigh is 14:
 ```{r cutting  dendrogram, message=FALSE, warning=FALSE}
 cut_tree <- cutree(h_clust_res, k = 3, h = 14)
+# let see proportions:
+table(cut_tree)
 # cutree created an integer vector with clusters from 1 to 3.
 
 # Now let's show these clusters and the horizontal line on the plot:
@@ -158,11 +167,53 @@ abline(h = 14, col = 'yellow')
 Let's assign these clusters to our testdata, and print some cluster plots using ggplot2:
 
 ```{r}
-testdata_new <- cbind(testdata,cut_tree)
-testdata_new$cut_tree <- as.factor(testdata_new$cut_tree)
-table(testdata_new$cut_tree)
-testdata_new %>% ggplot(aes(x = carat,y = price, color = cut_tree)) +
+hclust_results <- cbind(testdata,cut_tree)
+hclust_results$cut_tree <- as.factor(hclust_results$cut_tree)
+hclust_results %>% ggplot(aes(x = carat,y = price, color = cut_tree)) +
   geom_point()
 
 ```
 
+
+## 2. K-means Clustering
+
+! Important: I will use the dataset "testdata_transformed" from the hierarchical clustering.
+
+The customer segmentation (clustering) is an unsupervised method that tries to find if hidden groups or structures exist in the data. We will use k-means clustering method with Euclidean distance metrics. First we will z-standardize the features for correct distance calculation. This normalization procedure is required to scale down variables to make sure that large variables do not dominate small ones. Then we will define the optimal number of clusters (k). kmeans() from stats package performs k-means clustering. K-means aims to partition the points into k groups such that the sum of squares from points to the assigned cluster centres is minimized. At the minimum, all cluster centres are at the mean of their Voronoi sets (the set of data points which are nearest to the cluster centre). It is a centroid-based clustering, whith the main idea of minimizing intra-cluster variation or total within-cluster variation to define clusters. The total within-cluster variation is calculated as the sum of squared Euclidean distances between points and the corresponding centroid: 
+SSD = sum(Xi - Mk)^2
+
+where: Xi is a point belonging to the cluster Ck
+Mk - is the mean value of the points assigned to the cluster Ck
+Each point Xk is assigned to a given cluster such that the sum of squared distance of the point to their assigned cluster centers Mk is minimized.
+
+The optimization algorith works as follows:
+
+1. Specify k - the number of clusters to be created.
+2. Select randomly k objects from the dataset as the initial cluster centers.
+3. Assign each observation to their closest centroid, based on the Euclidean distance between the object and the centroid.
+4. For each of the k clusters recompute the cluster centroid by calculating the new mean value of all the data points in the cluster.
+5. Iteratively minimize the total within sum of square or the total within-cluster variation. Repeat Step 3 and Step 4, until the centroids do not change or the maximum number of iterations is reached.
+
+To use k-means we need first define the number of clusters k:
+
+```{r Number of cluster calculation, echo=FALSE, message=FALSE, warning=FALSE}
+library(factoextra)
+fviz_nbclust(testdata_transformed,kmeans,method = "wss")
+# Well the elbow seems to be around 2 or 3. So let's take k = 3
+
+```
+
+```{r k-means clustering, echo=FALSE, message=FALSE, warning=FALSE}
+
+clustering.model <- kmeans(testdata_transformed, 3, nstart = 50)
+# The object clustering.model of type kmeans has been created.
+# Let's take the cluster vector from this object:
+cluster_vector <- clustering.model$cluster
+# Let's create a result dataset by combining the cluster vector with testdata
+
+kmeans_results <- cbind(testdata,cluster_vector)
+kmeans_results$cluster_vector <- as.factor(kmeans_results$cluster_vector)
+kmeans_results %>% ggplot(aes(x = carat,y = price, color = cluster_vector)) +
+  geom_point()
+
+```
