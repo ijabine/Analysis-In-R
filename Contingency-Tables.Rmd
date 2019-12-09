@@ -1,0 +1,158 @@
+---
+title: "Contingency-Tables"
+author: "Illarion Jabine"
+date: "08/12/2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Contingency Tables
+
+A contingency table (aka a cross tabulation or crosstab) is a matrix that displays the (multivariate) frequency distribution of the variables (<https://en.wikipedia.org/wiki/Contingency_table>). In standard R there are several functions that allow to create contingency tables:
+
+* table() - uses the cross-classifying factors to build a contingency table of the counts at each combination of factor levels. probably most widely used function.
+* prop.table() - tables of proportions, as an argument uses the table contingency created by table() function.
+* xtabs() - Create a contingency table (optionally a sparse matrix) from cross-classifying factors using formula style input.
+* margin.table() - For a contingency table in array form, compute the sum of table entries for a given index.
+* ftable() - prints multidimensional table in ‘flat’ format.
+More advanced version is CrossTable() from gmodels package.
+
+```{r Examples of simple contingency tables}
+# Loading libraries
+library(tidyverse)
+library(gmodels)
+
+# Generating a sample dataframe
+
+sex <- sample(c("male","female"),100,replace = TRUE)
+position <- sample(c("manager","analyst","executive"),100,replace = TRUE)
+salary <- sample(c("high","medium","low"),100,replace = TRUE)
+poll_results <- data.frame(sex,position,salary)
+
+# To save poll_results in a RData file: save(poll_results,file = "poll_reults.RData")
+
+# To generate the frequence table use table() function. In this case it is a multidimensional table. Use ftable() to print it in 'flat' format:
+freq_table_full <- table(poll_results)
+ftable(freq_table_full)
+
+# To generate the proportions table
+prop.table(freq_table_full)
+
+# simple two-way contingency table:
+two_var_table <- table(sex,position)
+prop.table(two_var_table)
+
+# Calculating table margin values by row:
+margin.table(two_var_table, 1)
+
+# Calculating table margin values by column:
+margin.table(two_var_table, 2)
+
+# summary(table_name) shows chi-square test of indepedence:
+summary(two_var_table)
+
+# Contingency tables can also be created using dplyr package:
+poll_results %>% group_by(salary,sex,position) %>% summarise(count = n())
+
+```
+
+We can visualise the contingency tables using standard barplot() or ggplot2:
+
+```{r Examples of contingency table plots}
+# And now lets show this table using standard barplot(), stacked bar plot:
+barplot(two_var_table,legend = rownames(two_var_table), args.legend = list(x = "topright"))
+
+# Side by side:
+barplot(two_var_table,legend = rownames(two_var_table), beside = TRUE, args.legend = list(x = "topright"))
+
+# Or using ggplot2:
+poll_results  %>% ggplot(aes(x = position, fill = sex)) +
+  geom_bar()
+
+poll_results  %>% ggplot(aes(x = position, fill = sex)) +
+  geom_bar(position = position_dodge())
+
+```
+
+More on bar plots using ggplot <http://www.sthda.com/english/wiki/ggplot2-barplots-quick-start-guide-r-software-and-data-visualization>
+
+CrossTable() function from the gmodels package has lots of options:
+CrossTable(x, y, digits=3, max.width = 5, expected=FALSE, prop.r=TRUE, prop.c=TRUE,
+           prop.t=TRUE, prop.chisq=TRUE, chisq = FALSE, fisher=FALSE, mcnemar=FALSE,
+           resid=FALSE, sresid=FALSE, asresid=FALSE,
+           missing.include=FALSE,
+           format=c("SAS","SPSS"), dnn = NULL, ...)
+           
+digits	
+Number of digits after the decimal point for cell proportions
+
+max.width	
+In the case of a 1 x n table, the default will be to print the output horizontally. If the number of columns exceeds max.width, the table will be wrapped for each successive increment of max.width columns. If you want a single column vertical table, set max.width to 1
+
+expected	
+If TRUE, chisq will be set to TRUE and expected cell counts from the Chi-Square will be included
+
+prop.r	
+If TRUE, row proportions will be included
+
+prop.c	
+If TRUE, column proportions will be included
+
+prop.t	
+If TRUE, table proportions will be included
+
+prop.chisq	
+If TRUE, chi-square contribution of each cell will be included
+
+chisq	
+If TRUE, the results of a chi-square test will be included
+
+fisher	
+If TRUE, the results of a Fisher Exact test will be included
+
+mcnemar	
+If TRUE, the results of a McNemar test will be included
+
+resid	
+If TRUE, residual (Pearson) will be included
+
+sresid	
+If TRUE, standardized residual will be included
+
+asresid	
+If TRUE, adjusted standardized residual will be included
+
+missing.include	
+If TRUE, then remove any unused factor levels
+
+format	
+Either SAS (default) or SPSS, depending on the type of output desired.
+
+dnn	
+the names to be given to the dimensions in the result (the dimnames names).
+
+CrossTable can perform Chi-Square and Fisher Exact tests while generating the contingency table, by setting chisq = TRUE and fisher=TRUE:
+
+```{r statistical tests}
+
+advanced_table <- CrossTable(x = poll_results$sex,y = poll_results$position,expected=FALSE,prop.r=TRUE,prop.c=TRUE,prop.t=TRUE,chisq = TRUE,fisher=TRUE,mcnemar=FALSE,resid=FALSE,sresid=FALSE,asresid=FALSE,missing.include=FALSE)
+attributes(advanced_table)
+advanced_table$chisq
+advanced_table$fisher.ts
+
+# Chi-Square test can be run independently:
+(chi_res <- chisq.test(two_var_table))
+# to extract individual elemenst of the htest object
+attributes(chi_res)
+chi_res$p.value
+
+# and Ficher exact test:
+fisher.test(two_var_table) 
+```
+
+
