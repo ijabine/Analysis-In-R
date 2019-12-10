@@ -1,0 +1,67 @@
+---
+title: "Correlation"
+author: "Illarion Jabine"
+date: "09/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Correlation
+
+By definition the covariance is a measure of the linear association between two variables. Correlation provides a measure of linear association and not necessarily causation. Correlation coefficient is a measure of linear association between two variables that takes on values between -1 and 1. Values near 1 indicate a strong positive linear relationship; values near -1 indicate a strong negative linear relationship; and values near zero indicate the lack of a linear relationship. The formula: Cor(x,y) = Cov(x,y)/[sd(x)*sd(y)].
+Standard R functions var(), cov() and cor() compute the variance of x and the covariance or correlation of x and y if these are vectors. If x and y are matrices then the covariances (or correlations) between the columns of x and the columns of y are computed.
+
+```{r correlation calculation}
+cor(mtcars)
+```
+
+To visualise the correlation use standard function pairs() from graphics package. Mode adavanced plot can be produced using pairs.panels() from psych package.  pairs.panels shows a scatter plot of matrices, with bivariate scatter plots below the diagonal, histograms on the diagonal, and the Pearson correlation above the diagonal. Useful for descriptive statistics of small data sets. If lm=TRUE, linear regression fits are shown for both y by x and x by y. Correlation ellipses are also shown. Points may be given different colors depending upon some grouping variable. Robust fitting is done using lowess or loess regression. Confidence intervals of either the lm or loess are drawn if requested.
+pairs(x, smooth = TRUE, scale = FALSE, density=TRUE,ellipses=TRUE,
+     digits = 2,method="pearson", pch = 20, lm=FALSE,cor=TRUE,jiggle=FALSE,factor=2, 
+     hist.col="cyan",show.points=TRUE,rug=TRUE, breaks = "Sturges",cex.cor=1,wt=NULL,
+     smoother=FALSE,stars=FALSE,ci=FALSE,alpha=.05, ...)
+It is also worth mentioning corrplot() function from corrplot package and PlotCorr() from DescTools package:
+
+```{r correlation plots, echo=TRUE, message=FALSE, warning=FALSE}
+library(graphics)
+library(psych)
+library(corrplot)
+
+pairs(iris)
+
+pairs.panels(iris,lm = TRUE, smoother = TRUE)
+
+# corPlot() from psych package shows correlation matrices graphically by using the image function to emphasize structure:
+
+cor_matrix <- cor(mtcars)
+corPlot(cor_matrix, main = "Correlation Matrix")
+# psych package contains a wealth of useful functions, for more  help(package="psych"):
+# for example for descriptive statistics try describe():
+describe(mtcars)
+
+# corrplot() from corrplot package:
+corrplot(cor_matrix)
+
+# PlotCorr() from DescTools (Tools for Descriptive Statistics):
+PlotCorr(cor_matrix, cols=colorRampPalette(c("red", "black", "green"), space = "rgb")(20))
+
+```
+
+Here is a good text on how to customize pairs(): <http://www.sthda.com/english/wiki/scatter-plot-matrices-r-base-graphs#r-base-scatter-plot-matrices-pairs>
+
+I have to write a separate manual on descriptive statistics !!!
+
+## Correlation Tests
+
+You can also embed plots, for example:
+
+```{r correlation tests, echo=FALSE}
+# Correlation test (one pair):
+
+cor_test_result <- cor.test(mtcars$mpg,mtcars$cyl,alternative="two.sided",method="pearson",conf.level = 0.95)
+
+
+```
