@@ -1,0 +1,94 @@
+---
+title: "Exploratory-Data-Analysis-R"
+author: "Illarion Jabine"
+date: "11/12/2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Principles of analytic graphics
+
+A picture is worth thousand words, but not all pictures. In order for a picture to convey the message it should satisfy some principles. E.Tufte (2006) describes them in his book "Beautiful Evidence" as principles of analytic graphics, they the folowing basic principles of presenting data effectively according to R.Peng:
+
+1. Show comparisons
+2. Show causality, mechanism and explanation
+3. Show multivariate data
+4. Integrate multiple modes of evidence
+5. Describe and document the evidence
+6. Content is king
+
+
+1. Show comparisons
+
+When presenting your findings try to put them into perspective by asking a question "Compared to What?"
+A classical example is two boxplots, of which one is of a control group shown next to each other. I will create boxplots for number of cylinders in mtcars dataset. By see the boxplots side by side, it is clear that 4 cylinder cars are more economical (mpg is higher)
+
+```{r Show comparisons}
+boxplot(mpg ~ cyl, data = mtcars)
+
+```
+
+2. Show causality, mechanism and explanation
+
+The graph needs to present the causal framework for the theory of how the data works. It has to demonstrate the (at least try to) the explanations of possible causal framework that might exist in the studied phenomena. For example, by studing mtcars dataset I might claim that the 4 cylinders cars are more efficent due to thier lighter weight:
+```{r Show causality, mechanism and explanation}
+
+# miles/gallon vs cylinders and weight vs cylinders boxplots side by side:
+par(mfrow = c(1,2))
+boxplot(mpg ~ cyl, data = mtcars);boxplot(wt ~ cyl, data = mtcars)
+
+```
+
+Indeed it looks like there is some kind of causal relationship. Perhaps it should be studied further...
+
+3. Show multivariate data (i.e. more than two variables)
+
+By combining several variables on the plot you can avoid being misled and draw an incorrect conclusion. By adding several new dimentions to your plot eitherthrough groupings (faceting), color, size, shape, etc ypu might see some hidden patterns.
+
+```{r Show multivariate data}
+library(ggplot2)
+qplot(mpg, wt, data = mtcars, facets = . ~ cyl, geom = c("point", "smooth"), method = "lm", main = "Grouping by number of cylinders", xlab = "Miles per gallon", ylab = "Weight")
+
+qplot(mpg, wt, data = mtcars, geom = c("point", "smooth"), method = "lm", xlab = "Miles per gallon", ylab = "Weight")
+```
+
+
+4. Integrate multiple modes of evidence
+
+You data graphic should tell the story by using many modes of data presentation including images, diagrams, words and numbers. All of them should be naturally integrated without creating a clutter, but helping to convey the message in a clear way.
+
+
+5. Describe and document the evidence
+
+R. Peng argues that a good analytic graphics has to describe and document the evidence with appropriate labels, scales, sources, etc. That means all the axes need to have names, a legend, title etc need to be present. All these elements can be controlled in ggplot2.
+
+6. Content is king
+
+Content comes first and only after the for (nice fonts, colors, etc)
+
+
+## What other R functions allow us to do exploratory data analysis?
+
+* summary() - a generic function (to list all available methods for a generic function type: methods(summary))
+* skim() from skimr package
+* describe() from psych package
+* Desc() from DescTools (Tools for Descriptive Statistics) package. this function produces summaries of various types of variables. The appropriate statistics are chosen depending on the class of x. The general intention is to simplify the description process for lazy typers and return a quick, but rich summary.
+
+```{r}
+library(skimr)
+library(psych)
+library(DescTools)
+
+summary(mtcars)
+skim(mtcars)
+describe(mtcars)
+Desc(mtcars)
+```
+
+Another great tool for descriptive statistics is ggplot2 package.
+
