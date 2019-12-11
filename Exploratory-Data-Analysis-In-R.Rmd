@@ -23,6 +23,7 @@ A picture is worth thousand words, but not all pictures. In order for a picture 
 6. Content is king
 
 
+
 1. Show comparisons
 
 When presenting your findings try to put them into perspective by asking a question "Compared to What?"
@@ -72,23 +73,107 @@ R. Peng argues that a good analytic graphics has to describe and document the ev
 Content comes first and only after the for (nice fonts, colors, etc)
 
 
-## What other R functions allow us to do exploratory data analysis?
+## Types of exploratory data analysis
 
+Exploratory graphs are widely used in exploratory data analysis. There are many purposes of the exploratory graphs. They are used to understand data properties, possibly find some patterns in data and as a result suggest modeling approaches. Eventually they can serve as one of the means to communicate results.
+Broadly speaking exploratory graphs can be simple one dimension and 2 or more dimension.
+
+* One dimension:
+- Five-number summary
+- Boxplots
+- Histograms
+- Density plot
+- Barplot
+
+- Five-number summary :
 * summary() - a generic function (to list all available methods for a generic function type: methods(summary))
 * skim() from skimr package
 * describe() from psych package
 * Desc() from DescTools (Tools for Descriptive Statistics) package. this function produces summaries of various types of variables. The appropriate statistics are chosen depending on the class of x. The general intention is to simplify the description process for lazy typers and return a quick, but rich summary.
 
-```{r}
+```{r Five-number summary}
 library(skimr)
 library(psych)
 library(DescTools)
 
 summary(mtcars)
+
 skim(mtcars)
+
 describe(mtcars)
+
 Desc(mtcars)
 ```
 
-Another great tool for descriptive statistics is ggplot2 package.
+- Boxplots
+
+```{r Boxplots, echo=TRUE, message=FALSE, warning=FALSE}
+attach(diamonds)
+
+# Simple boxplot
+
+boxplot(carat, col = "blue")
+title("Simple boxplot")
+
+# boxplots split by cut using standard boxplot() function:
+
+boxplot(carat ~ cut)
+
+# boxplot using ggplot2:
+library(ggplot2)
+
+ggplot(diamonds) +
+ aes(x = cut, y = carat) +
+ geom_boxplot(fill = "#0c4c8a") +
+ theme_minimal()
+
+
+ggplot(diamonds) +
+ aes(x = cut, y = carat, fill = clarity) +
+ geom_boxplot() +
+ scale_fill_hue() +
+ labs(title = "Boxplot with clarity as fill") +
+ theme_minimal()
+
+ggplot(diamonds) +
+ aes(x = cut, y = carat) +
+ geom_boxplot(fill = "#0c4c8a") +
+ labs(title = "Boxplot with clarity as facet") +
+ theme_minimal() +
+ facet_wrap(clarity)
+
+```
+
+- Histogram and Density plot
+
+```{r histograms, echo=TRUE, message=FALSE, warning=FALSE}
+
+# using standard function hist(), we also calculate and show with a red line the median:
+
+hist(carat, breaks = 20, density = 10, angle = 45, col = "blue")
+rug(carat)
+abline(v = median(carat), col = "red", lwd = 3)
+
+# using ggplot2:
+
+# we strore the histogram in hst object:
+hst <- diamonds %>% ggplot(aes(x = carat)) +
+ geom_histogram(bins = 30, fill = "blue") +
+ theme_classic()
+# to print the histogram just type hst and enter
+hst
+
+# we can add additional layers to the histogram, for example a title: 
+hst <- hst + labs(title = "Carat distribution")
+
+# Density plots
+
+d <- density(carat)
+plot(d)
+
+ggplot(diamonds) +
+ aes(x = carat) +
+ geom_density(adjust = 1L, fill = "#c6dbef") +
+ theme_minimal()
+```
 
