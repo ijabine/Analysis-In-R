@@ -264,6 +264,7 @@ bar_plot_coordinate_flip
 !!! To place multiple plots (coplots) on one page use the following packages: gridExtra, cowplot and ggpubr.
 Installation of ggpubr will automatically install gridExtra, cowplot.
 
+* 2 dimensions
 
 - Scatterplot
 
@@ -285,5 +286,49 @@ plot(x = df$carat, y = df$price, pch = 4, col = "red", lwd = 2) # pch - a symbol
 diamonds %>% filter(price > 15000) %>%
   ggplot(aes(x = carat, y = price)) +
   geom_point(color = "red")
+```
+
+* More than 2 dimensions
+
+```{r more than 2 dimensions,echo=TRUE, message=FALSE, warning=FALSE}
+# Multiple Boxplots:
+boxplot(diamonds$price ~ diamonds$cut, col = "blue")
+
+# Multiple Histograms
+
+# Setting graphical parameters first with par() and using standard hist() function:
+par(mfrow = c(2, 1), mar = c(4, 4, 2, 1))
+hist(subset(diamonds, cut == "Fair")$price, col = "green")
+hist(subset(diamonds, cut == "Ideal")$price, col = "green")
+
+# dplyr and ggplot version
+
+diamonds %>% filter(cut %in% c("Fair","Ideal")) %>%
+  ggplot(aes(x = price)) +
+  geom_histogram() +
+  facet_wrap(vars(cut))
+
+# Adding another dimension to a scaterplot by using color:
+plot(x = df$carat, y = df$price, col = cut)
+
+# ggplot() version:
+
+diamonds %>% ggplot(aes(x= carat, y = price, colour = cut)) +
+  geom_point()
+
+# Multiple Scatterplots
+
+# Setting graphical parameters first with par() and using standard plot() function:
+par(mfrow = c(1, 2), mar = c(5, 4, 2, 1))
+with(subset(diamonds, cut == "Fair"), plot(x = carat, y = price, main = "Fair"))
+with(subset(diamonds, cut == "Ideal"), plot(x = carat, y = price, main = "Ideal"))
+
+# dplyr and ggplot version:
+
+diamonds %>% filter(cut %in% c("Fair","Ideal")) %>%
+  ggplot(aes(x = carat,y = price,colour = cut)) +
+  geom_point() +
+  facet_wrap(vars(clarity))
+
 ```
 
