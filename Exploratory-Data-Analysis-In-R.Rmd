@@ -96,6 +96,16 @@ Worth mentioning that if mean (mean() function in R) is used as a measure of cen
 On the other hand if median (median() function) is used as a measure of central tendency then interquartile range (IQR() function) is used to measure variability.
 Other useful functions: range() which calculates min and max values, and quantile().
 
+```{r IRQ and quantile}
+data("diamonds")
+
+# IQR is calculated as 3rd (75%) quantile - 1st (25%) quantile
+iqr_by_IQR_function <- IQR(diamonds$price)
+iqr_calculated <- quantile(diamonds$price,probs = .75) - quantile(diamonds$price,probs = .25)
+
+```
+
+
 ```{r Five-number summary}
 library(skimr)
 library(psych)
