@@ -53,6 +53,8 @@ By combining several variables on the plot you can avoid being misled and draw a
 
 ```{r Show multivariate data}
 library(ggplot2)
+
+# qplot() from ggplot2 is a convenient wrapper for creating a number of different types of plots. qplot will attempt to guess what geom you want depending on the input both x and y supplied = scatterplot
 qplot(mpg, wt, data = mtcars, facets = . ~ cyl, geom = c("point", "smooth"), method = "lm", main = "Grouping by number of cylinders", xlab = "Miles per gallon", ylab = "Weight")
 
 qplot(mpg, wt, data = mtcars, geom = c("point", "smooth"), method = "lm", xlab = "Miles per gallon", ylab = "Weight")
@@ -78,18 +80,21 @@ Content comes first and only after the for (nice fonts, colors, etc)
 Exploratory graphs are widely used in exploratory data analysis. There are many purposes of the exploratory graphs. They are used to understand data properties, possibly find some patterns in data and as a result suggest modeling approaches. Eventually they can serve as one of the means to communicate results.
 Broadly speaking exploratory graphs can be simple one dimension and 2 or more dimension.
 
-* One dimension:
+### One dimension
 - Five-number summary
 - Boxplots
 - Histograms
 - Density plot
-- Barplot
+- Bar plot
 
 - Five-number summary :
 * summary() - a generic function (to list all available methods for a generic function type: methods(summary))
 * skim() from skimr package
 * describe() from psych package
 * Desc() from DescTools (Tools for Descriptive Statistics) package. this function produces summaries of various types of variables. The appropriate statistics are chosen depending on the class of x. The general intention is to simplify the description process for lazy typers and return a quick, but rich summary.
+Worth mentioning that if mean (mean() function in R) is used as a measure of central tendency then normally standard deviation is used as a measure of variability (sd() function in R).
+On the other hand if median (median() function) is used as a measure of central tendency then interquartile range (IQR() function) is used to measure variability.
+Other useful functions: range() which calculates min and max values, and quantile().
 
 ```{r Five-number summary}
 library(skimr)
@@ -124,8 +129,7 @@ library(ggplot2)
 
 ggplot(diamonds) +
  aes(x = cut, y = carat) +
- geom_boxplot(fill = "#0c4c8a") +
- theme_minimal()
+ geom_boxplot(fill = "#0c4c8a")
 
 
 ggplot(diamonds) +
@@ -162,18 +166,114 @@ hst <- diamonds %>% ggplot(aes(x = carat)) +
  theme_classic()
 # to print the histogram just type hst and enter
 hst
+library(tidyverse)
+library(ggplot2)
 
 # we can add additional layers to the histogram, for example a title: 
 hst <- hst + labs(title = "Carat distribution")
+
+# If you wish to overlay several histograms on the same plot, use  geom_freqpoly():
+
+diamonds %>% ggplot(aes(x = price)) +
+ geom_freqpoly(aes(color = cut), binwidth = 450) +
+ theme_minimal()
+
 
 # Density plots
 
 d <- density(carat)
 plot(d)
 
+# simple density plot for one variable
 ggplot(diamonds) +
  aes(x = carat) +
  geom_density(adjust = 1L, fill = "#c6dbef") +
  theme_minimal()
+
+# If you want to superimpose the kernal density plots of two or more groups:
+
+diamonds %>% ggplot(aes(x = carat, fill = color)) +
+ geom_density(alpha = 0.5) + # we can control the transparency of the density plots with alpha
+ scale_fill_hue() +
+ theme_minimal()
+
+```
+
+- Bar plot
+
+```{r barplot, echo=TRUE, message=FALSE, warning=FALSE}
+
+# You can build a bar plot using R standard function barplot():
+
+# If you want to build a bar plot for a categorical variable (factor), first create a table of counts using table() function:
+
+count_table <- table(diamonds$cut)
+
+# then use this table as an argument of barplot():
+barplot(count_table, col = "wheat", main = "Diamond Cuts")
+
+# to build a bar plot with ggplot use geom_bar():
+
+bar_plot_base <- diamonds %>% ggplot(aes(x = cut)) +
+  geom_bar()
+
+# You can also count different number of cuts using count() function from dplyr package:
+
+diamonds %>% count(cut)
+
+# or the same result but with more typing :):
+
+diamonds %>% group_by(cut) %>% summarise(count = n())
+
+# If you want to swap x and y (coordinate flip) use coord_flip():
+
+bar_plot_coordinate_flip <- bar_plot_base +
+  coord_flip()
+
+bar_plot_coordinate_flip
+
+```
+
+
+### Two or more dimensions
+
+* 2 dimensions:
+- Multiple/overlaid 1D plots
+- Scatterplots (2 continuous variables)
+- Smooth scatterplots
+- geom_count() and geom_tile() (from ggplot2) for 2 categorical variables
+- geom_bin2d() and geom_hex() (2 continuous variables)
+
+* More than 2 dimensions:
+- Overlaid/multiple 2D plots
+- Coplots
+- To show other dimensions use color, size, shape
+- Grouping and faceting
+- Spinning plots
+
+!!! To place multiple plots (coplots) on one page use the following packages: gridExtra, cowplot and ggpubr.
+Installation of ggpubr will automatically install gridExtra, cowplot.
+
+
+- Scatterplot
+
+Probably the most widely used plot for 2 continuous variables
+
+```{r scatterplot,echo=TRUE, message=FALSE, warning=FALSE}
+
+# using standard R function plot():
+
+# let's take only diamonds with price > 15000
+
+df <- subset(diamonds, price > 15000) # or df <- diamonds[price > 15000,]
+
+plot(x = df$carat, y = df$price, pch = 4, col = "red", lwd = 2) # pch - a symbol or a single character to be used as the default in plotting points. col - color, lwd - line width
+# For more details on available graphical parameters see help on par(): ?par
+
+# the same plot using dplyr and ggplot2:
+
+diamonds %>% filter(price > 15000) %>%
+  ggplot(aes(x = carat, y = price)) +
+  geom_point(color = "red")
 ```
 
