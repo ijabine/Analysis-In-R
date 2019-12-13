@@ -11,6 +11,14 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+### Required packages:
+
+* [ggplot2]
+* [tidyverse]
+* [skimr]
+* [psych]
+* [DescTools]
+
 ## Principles of analytic graphics
 
 A picture is worth thousand words, but not all pictures. In order for a picture to convey the message it should satisfy some principles. E.Tufte (2006) describes them in his book "Beautiful Evidence" as principles of analytic graphics, they the folowing basic principles of presenting data effectively according to R.Peng:
