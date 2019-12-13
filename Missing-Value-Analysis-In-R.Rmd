@@ -2,7 +2,9 @@
 title: "Missing Value Analysis in R"
 author: "Illarion Jabine"
 date: "13/12/2019"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -72,7 +74,7 @@ sum(is.na(iris.mis))
 select_if(iris.mis,is.numeric) %>% colSums()
 
 # another way to select only numeric columns:
-iris.mis[, unlist(lapply(iris.mis, is.numeric))]
+# iris.mis[, unlist(lapply(iris.mis, is.numeric))]
 
 # More advanced way to see the structure of the missing data is to use md.pattern() from mice package:
 mice::md.pattern(iris.mis)
