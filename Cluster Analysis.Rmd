@@ -11,6 +11,13 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+### Required packages:
+
+* [tidyverse]
+* [caret]
+* [klaR]
+* [factoextra]
+
 ## Cluster Analysis in R 
 
 In this document we will go through two classical cluster analysis methodes: hierarchical and  K-means. There are other cluster methodes which will be discussed in other documents.
@@ -198,7 +205,7 @@ To use k-means we need first define the number of clusters k:
 
 ```{r Number of cluster calculation, echo=FALSE, message=FALSE, warning=FALSE}
 library(factoextra)
-fviz_nbclust(testdata_transformed,kmeans,method = "wss")
+#fviz_nbclust(testdata_transformed,kmeans,method = "wss")
 # Well the elbow seems to be around 2 or 3. So let's take k = 3
 
 ```
@@ -217,3 +224,5 @@ kmeans_results %>% ggplot(aes(x = carat,y = price, color = cluster_vector)) +
   geom_point()
 
 ```
+
+
