@@ -1,0 +1,131 @@
+---
+title: "Missing Value Analysis in R"
+author: "Illarion Jabine"
+date: "13/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+
+### Required packages:
+
+* [missForest]: to generate NAs at random
+* [mice]: for missing value patters
+* [VIM]: Visualization and Imputation of Missing Values
+* [dplyr]: select_if() - to select only numeric variables
+* [Hmisc]: imputing missing values
+
+
+## Missing Value Analysis and Handling
+
+Missing values is a common problem, and might cause serious problem down the road during the model building phase.
+So, handling this issue is of paramount importance. First of all you need to identify if a dataset contains any missing values. Once it's done you have 4 ways to handle them:
+1. Go back to the source of data (if possible) and find out what causes the missing values.
+2. Delete the observations with missing values.
+3. Delete the variables with missing values.
+4. Replace the missing values with the mean or median.
+5. Predict missing values by imputing them using methods like kNN, random forest, tree, lm, etc.
+
+
+As an example, let's create a dataset with missing values. We will use prodNA() function from lissForest package to generate random NAs:
+
+```{r create dataframe with NAs}
+library(missForest)
+library(mice)
+library(VIM)
+library(dplyr)
+library(tidyverse)
+library(Hmisc)
+data(iris)
+
+# create a new dataframe with 10% missing values:
+iris.mis <- prodNA(iris, .10)
+
+# another way using sample() function to enject missing values:
+iris.mis1 <- iris
+iris.mis1[sample(1:nrow(iris), round(nrow(iris)/10)), "Sepal.Length"] <- NA
+iris.mis1[sample(1:nrow(iris), round(nrow(iris)/10)), "Sepal.Width"] <- NA
+iris.mis1[sample(1:nrow(iris), round(nrow(iris)/10)), "Petal.Length"] <- NA
+iris.mis1[sample(1:nrow(iris), round(nrow(iris)/10)), "Petal.Width"] <- NA
+```
+
+## 1. Missing Value Initial Analysis
+
+The first step is to analyse if the dataset contains missing values,what variables are affected and the distribution pattern.
+
+The basic functions that allow to detect the presence of missing values incluce summary(), colSums()
+```{r detecting missing values}
+
+# shows the columns with missing values and their count.
+summary(iris.mis)
+# To see the total number of missing values:
+sum(is.na(iris.mis))
+
+# we select only numeric colums and checks if they contain NAs
+select_if(iris.mis,is.numeric) %>% colSums()
+
+# another way to select only numeric columns:
+iris.mis[, unlist(lapply(iris.mis, is.numeric))]
+
+# More advanced way to see the structure of the missing data is to use md.pattern() from mice package:
+mice::md.pattern(iris.mis)
+# the last row of the matrix contains the number of missing values in each column
+
+# To see missing values in more visual format use aggr() from VIM package:
+# This function calculates or plots the amount of missing/imputed values in each variable and the amount of missing/imputed values in certain combinations of variables.
+
+missing_value_analysis <- aggr(iris.mis, col=c("skyblue", "red"),
+ numbers=TRUE, sortVars=TRUE,
+ labels=names(iris.mis), cex.axis=.7,
+ gap=2, ylab=c("Missing Data Histogram","Pattern"))
+
+# To see summary of the missing values analysis produced by aggr use generic function summary():
+summary(missing_value_analysis)
+
+```
+
+## 2.Replacing Missing Values with mean or median
+
+Replacing NAs with mean or median values is quite a straightforward, brute force approach. It is not as sophisticated as predicting the missing values by means of prediction methodes, but as a quick and dirty approach it might do. 
+
+```{r Replacing Missing Values with mean or median}
+# Let's first exclude the categorical variable Species from our computation:
+iris.mis <- iris.mis[,-5]
+
+# Let's replace NAs with column vector means using mice() function from mice package:
+mean_compute_mice <- mice::mice(data = iris.mis, method = "mean")
+
+# To retrive the new dataset with computed NAs from the object mean_compute_mice use complete() function:
+mean_compute_mice_res <- mice::complete(mean_compute_mice)
+
+# We can impute NAs using impute() function from Hmisc package. If instead of function a single value is specified those value is used for insertion.
+
+impute(iris.mis$Sepal.Length, mean) # replace NAs with mean
+impute(iris.mis$Sepal.Length, median) # replace NAs with median
+impute(iris.mis$Sepal.Length, 10) # replace NAs with 10
+
+# Or we can replace missing values with minimal or maximal values:
+impute(iris.mis$Sepal.Length, min)
+impute(iris.mis$Sepal.Length, max)
+
+
+# Replacing using R standard functionality:
+
+# iris.mis$Sepal.Length[is.na(iris.mis$Sepal.Length)] <- mean(iris.mis$Sepal.Length, na.rm = TRUE)
+```
+
+## 3. Impute Missing Values by using prediction algorithm
+
+This is more sophisticated methode of estimating values for the missing values by applying different prediction models learned for missing values.
+
+For available imputation methodes, see help(mice).
+
+
+
