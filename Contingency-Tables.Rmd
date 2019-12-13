@@ -11,6 +11,13 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+### Required packages:
+
+* [tidyverse]
+* [gmodels]
+* [corrplot]
+* [DescTools]
+
 ## Contingency Tables
 
 A contingency table (aka a cross tabulation or crosstab) is a matrix that displays the (multivariate) frequency distribution of the variables (<https://en.wikipedia.org/wiki/Contingency_table>). In standard R there are several functions that allow to create contingency tables:
