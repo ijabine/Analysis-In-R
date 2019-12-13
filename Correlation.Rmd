@@ -9,6 +9,13 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+### Required packages:
+
+* [graphics]
+* [psych]
+* [corrplot]
+* [DescTools]
+
 ## Correlation
 
 By definition the covariance is a measure of the linear association between two variables. Correlation provides a measure of linear association and not necessarily causation. Correlation coefficient is a measure of linear association between two variables that takes on values between -1 and 1. Values near 1 indicate a strong positive linear relationship; values near -1 indicate a strong negative linear relationship; and values near zero indicate the lack of a linear relationship. The formula: Cor(x,y) = Cov(x,y)/[sd(x)*sd(y)].
@@ -53,7 +60,6 @@ PlotCorr(cor_matrix, cols=colorRampPalette(c("red", "black", "green"), space = "
 
 Here is a good text on how to customize pairs(): <http://www.sthda.com/english/wiki/scatter-plot-matrices-r-base-graphs#r-base-scatter-plot-matrices-pairs>
 
-I have to write a separate manual on descriptive statistics !!!
 
 ## Correlation Tests
 
