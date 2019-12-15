@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 * [VIM]: Visualization and Imputation of Missing Values
 * [dplyr]: select_if() - to select only numeric variables
 * [Hmisc]: imputing missing values
-
+* [caret]: kNN imputation
 
 ## Missing Value Analysis and Handling
 
@@ -63,7 +63,9 @@ iris.mis1[sample(1:nrow(iris), round(nrow(iris)/10)), "Petal.Width"] <- NA
 The first step is to analyse if the dataset contains missing values,what variables are affected and the distribution pattern.
 
 The basic functions that allow to detect the presence of missing values incluce summary(), colSums()
-```{r detecting missing values}
+```{r detecting missing values, echo=TRUE}
+# Quicly check if there exist any NAs using standard anyNA() function from base package:
+anyNA(iris.mis)
 
 # shows the columns with missing values and their count.
 summary(iris.mis)
@@ -72,6 +74,15 @@ sum(is.na(iris.mis))
 
 # we select only numeric colums and checks if they contain NAs
 select_if(iris.mis,is.numeric) %>% colSums()
+
+# If we want to see the total count of NAs in each column:
+
+# apply(2, is.na) - returns a logical vector of TRUE and FALSE for each column, and apply(2, sum) sums up (basically counts TRUEs (i.e. NAs)):
+total_nas_by_column <- iris.mis %>% apply(2, is.na) %>% apply(2, sum)
+
+# show the bar plot with NAs counts in each variable:
+barplot(total_nas_by_column)
+
 
 # another way to select only numeric columns:
 # iris.mis[, unlist(lapply(iris.mis, is.numeric))]
@@ -99,7 +110,9 @@ Replacing NAs with mean or median values is quite a straightforward, brute force
 
 ```{r Replacing Missing Values with mean or median}
 # Let's first exclude the categorical variable Species from our computation:
-iris.mis <- iris.mis[,-5]
+iris.mis <- iris.mis[,-5] 
+# We can exclude Species column using subset function: iris.mis <- subset(iris.mis, select = -c(Species))
+
 
 # Let's replace NAs with column vector means using mice() function from mice package:
 mean_compute_mice <- mice::mice(data = iris.mis, method = "mean")
@@ -125,9 +138,35 @@ impute(iris.mis$Sepal.Length, max)
 
 ## 3. Impute Missing Values by using prediction algorithm
 
-This is more sophisticated methode of estimating values for the missing values by applying different prediction models learned for missing values.
+This is more sophisticated methode of estimating values for the missing values by applying different prediction models learned for missing values. Quite popular NAs imputational methodes include kNN, classification and regression trees, linear and logistic regression, random forest, just to name a few. 
+Note: For available imputation methodes, see help(mice).
 
-For available imputation methodes, see help(mice).
+Let's compute missing values using different prediction algorithms:
+NAs replaced with the mean of the k nearest neighbors. I have found several packages that can perform kNN imputation (impute, DMwR, caret).
+
+Using caret package takes several steps:
+
+```{r missing value calculation: kNN with caret}
+#load caret library
+library(caret)
+# run preProcess() to compute missing values with the means of k=10 nearest  neighbors.
+Knn_NAs_preProcess <- preProcess(iris.mis,
+                            method = c("knnImpute"),
+                            k = 10,
+                            knnSummary = mean)
+# preProcess() automatically center and scale the data, regardless of what is in the  method  argument.
+
+# To create a transformed dataset use predict() function with Knn_NAs_preProcess as one of the parameters:
+Knn_NAs_calculation <- predict(Knn_NAs_preProcess, iris.mis,na.action = na.pass)
+
+# We need to de-normalize Knn_NAs_calculation dataframe using formula: x = z*standard deviation + mean:
+
+for(i in names(Knn_NAs_preProcess$mean)){
+  Knn_NAs_calculation[i] <- Knn_NAs_calculation[i]*Knn_NAs_preProcess$std[i] + Knn_NAs_preProcess$mean[i] 
+}
+
+```
+
 
 
 
