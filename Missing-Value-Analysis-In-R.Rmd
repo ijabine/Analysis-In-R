@@ -45,6 +45,7 @@ library(VIM)
 library(dplyr)
 library(tidyverse)
 library(Hmisc)
+library(caret)
 data(iris)
 
 # create a new dataframe with 10% missing values:
@@ -142,8 +143,9 @@ This is more sophisticated methode of estimating values for the missing values b
 Note: For available imputation methodes, see help(mice).
 
 Let's compute missing values using different prediction algorithms:
-NAs replaced with the mean of the k nearest neighbors. I have found several packages that can perform kNN imputation (impute, DMwR, caret).
 
+1. NAs replaced with the mean of the k nearest neighbors. 
+I have found several packages that can perform kNN imputation (impute, DMwR, caret).
 Using caret package takes several steps:
 
 ```{r missing value calculation: kNN with caret}
@@ -165,8 +167,36 @@ for(i in names(Knn_NAs_preProcess$mean)){
   Knn_NAs_calculation[i] <- Knn_NAs_calculation[i]*Knn_NAs_preProcess$std[i] + Knn_NAs_preProcess$mean[i] 
 }
 
+# Let's calculate the accuracy of kNN:
+
+na_index <- which(is.na(iris.mis[, -5]))
+iris_vector <- unlist(iris[, -5])
+missing_values_original <- iris_vector[na_index]
+
+iris_vector_imputed_knn <- unlist(Knn_NAs_calculation[, -5])
+missing_values_imputed_knn <- iris_vector_imputed_knn[na_index]
+
+# the root mean squared error between two numeric vectors
+RMSE_kNN <- sqrt(mean(missing_values_imputed_knn - missing_values_original)^2)
+
 ```
 
 
+2. NAs replaced by values calculated by randon forest:
 
+```{r missing value calculation: randon forest with mice, echo=TRUE, message=FALSE, warning=FALSE}
+# mice() generate the object of type mids
+RF_NAs_calculation <-  mice(iris.mis, method="rf")  
 
+# complete(): extracts the completed data from a 'mids' object
+RF_NAs_calculation_result <- mice::complete(RF_NAs_calculation)
+
+# Let's calculate the accuracy of randon forest:
+
+iris_vector_imputed_rf <- unlist(RF_NAs_calculation_result[, -5])
+missing_values_imputed_rf <- iris_vector_imputed_rf[na_index]
+
+# the root mean squared error between two numeric vectors
+RMSE_RF <- sqrt(mean(missing_values_imputed_rf - missing_values_original)^2)
+
+```
