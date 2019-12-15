@@ -170,7 +170,7 @@ for(i in names(Knn_NAs_preProcess$mean)){
 # Let's calculate the accuracy of kNN:
 
 na_index <- which(is.na(iris.mis[, -5]))
-iris_vector <- unlist(iris[, -5])
+iris_vector <- unlist(iris[, -5]) # Given a list structure x, unlist simplifies it to produce a vector which contains all the atomic components which occur in x.
 missing_values_original <- iris_vector[na_index]
 
 iris_vector_imputed_knn <- unlist(Knn_NAs_calculation[, -5])
