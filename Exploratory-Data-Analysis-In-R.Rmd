@@ -60,7 +60,7 @@ Indeed it looks like there is some kind of causal relationship. Perhaps it shoul
 By combining several variables on the plot you can avoid being misled and draw an incorrect conclusion. By adding several new dimentions to your plot eitherthrough groupings (faceting), color, size, shape, etc ypu might see some hidden patterns.
 
 ```{r Show multivariate data}
-library(ggplot2)
+library(tidyverse)
 
 # qplot() from ggplot2 is a convenient wrapper for creating a number of different types of plots. qplot will attempt to guess what geom you want depending on the input both x and y supplied = scatterplot
 qplot(mpg, wt, data = mtcars, facets = . ~ cyl, geom = c("point", "smooth"), method = "lm", main = "Grouping by number of cylinders", xlab = "Miles per gallon", ylab = "Weight")
@@ -126,6 +126,27 @@ skim(mtcars)
 describe(mtcars)
 
 Desc(mtcars)
+
+summary_5_numbers <- function(x) {
+  min_s <- min(x)
+  first_quantil <- quantile(x,probs = 0.25)
+  attr(first_quantil,"names") <- NULL  # removing the attribute, otherwise it will polute returned list
+  median_s <- median(x)
+  mean_s <- mean(x)
+  sd_s <- sd(x)  
+  IQR_s <- IQR(x)
+  third_quantil <- quantile(x,probs = 0.75)
+  attr(third_quantil,"names") <- NULL # removing the attribute, otherwise it will polute returned list
+  max_s <- max(x)
+  res <- list(Min = min_s,First_Quantil = first_quantil, Median = median_s, Mean = mean_s, SD = sd_s, IQR = IQR_s, Third_Quantil = third_quantil, Max = max_s)
+  return(res)
+  }
+
+# we can use standard sapply() function to produce a data frame with 5 number summary:
+five_number_summary <- sapply(mtcars,summary_5_numbers)
+
+# or map_df() function from purrr package:
+map_df(mtcars,summary_5_numbers)
 ```
 
 - Boxplots
@@ -163,6 +184,20 @@ ggplot(diamonds) +
  labs(title = "Boxplot with clarity as facet") +
  theme_minimal() +
  facet_wrap(clarity)
+
+
+# Pie chart for diamond cuts using standard R function pie():
+
+# creating pie_body
+pie_body <- table(diamonds$cut)
+
+# creating labels:
+labels <- paste(round(prop.table(pie_body)*100), "%", sep = " ",names(pie_body))
+
+# drawing the pie itself:
+pie(pie_body,labels = labels, 
+     col = heat.colors(5), main = "Diamond Cuts")
+
 
 ```
 
