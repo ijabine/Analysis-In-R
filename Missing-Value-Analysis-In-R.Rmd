@@ -18,12 +18,12 @@ knitr::opts_chunk$set(
 
 ### Required packages:
 
-* [missForest]: to generate NAs at random
-* [mice]: for missing value patters
-* [VIM]: Visualization and Imputation of Missing Values
-* [dplyr]: select_if() - to select only numeric variables
-* [Hmisc]: imputing missing values
-* [caret]: kNN imputation
+* missForest: to generate NAs at random
+* mice: for missing value patters
+* VIM: Visualization and Imputation of Missing Values
+* dplyr: select_if() - to select only numeric variables
+* Hmisc: imputing missing values
+* caret: kNN imputation
 
 ## Missing Value Analysis and Handling
 
@@ -32,7 +32,13 @@ This issue is pervasive and difficult to deal with.
 Generally speaking missing data can be in one of the following categories:
  1. Missing Completely at Random (MCAR)
  2. Missing at Random (MAR)
- 3. 2. Missing Not at Random (MNAR)
+ 3. Missing Not at Random (MNAR)
+* When we have MCAR there is no way to predict where in the data we can come across the missing data. To handle this situation you just drop rows with the missing values.
+* MAR situation is when missingness is associated with other variables. That actually means that conditioned on some variable in the data set the data are missing completely at random.
+To deal with MAR we can perform multiple imputation to predict what missing values could be. 
+There are many algorithms to perform imputations which allow to capture statistical structure of the relationships between the variables.
+* MNAR is when the missing data are neither MCAR nor MAR. It is often caused by deterministic relationship between variables.
+
 So, handling this issue is of paramount importance. First of all you need to identify if a dataset contains any missing values. Once it's done you have 4 ways to handle them:
 1. Go back to the source of data (if possible) and find out what causes the missing values.
 2. Delete the observations with missing values.
