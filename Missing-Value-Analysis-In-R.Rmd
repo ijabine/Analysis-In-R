@@ -14,8 +14,6 @@ knitr::opts_chunk$set(
 	warning = FALSE
 )
 ```
-
-
 ### Required packages:
 
 * missForest: to generate NAs at random
@@ -45,8 +43,6 @@ So, handling this issue is of paramount importance. First of all you need to ide
 3. Delete the variables with missing values.
 4. Replace the missing values with the mean or median.
 5. Predict missing values by imputing them using methods like kNN, random forest, tree, lm, etc.
-
-
 As an example, let's create a dataset with missing values. We will use prodNA() function from lissForest package to generate random NAs:
 
 ```{r create dataframe with NAs}
@@ -69,7 +65,6 @@ iris.mis1[sample(1:nrow(iris), round(nrow(iris)/10)), "Sepal.Width"] <- NA
 iris.mis1[sample(1:nrow(iris), round(nrow(iris)/10)), "Petal.Length"] <- NA
 iris.mis1[sample(1:nrow(iris), round(nrow(iris)/10)), "Petal.Width"] <- NA
 ```
-
 ## 1. Missing Value Initial Analysis
 
 The first step is to analyse if the dataset contains missing values,what variables are affected and the distribution pattern.
@@ -95,7 +90,6 @@ total_nas_by_column <- iris.mis %>% apply(2, is.na) %>% apply(2, sum)
 # show the bar plot with NAs counts in each variable:
 barplot(total_nas_by_column)
 
-
 # another way to select only numeric columns:
 # iris.mis[, unlist(lapply(iris.mis, is.numeric))]
 
@@ -115,7 +109,31 @@ missing_value_analysis <- aggr(iris.mis, col=c("skyblue", "red"),
 summary(missing_value_analysis)
 
 ```
+Michael Kane suggests the following approach to a quick check for MAR:
+ 1. Recode a column with one if the data is missing and zero otherwise
+ 2. Regress other variables onto it using a logistic regression
+ 3. Signicant p-value indicates MAR
+ 4. Repeat for other columns with missingness
+ 5. Some p-values can be signicant by chance, so adjust your cutoff for significance based on the number of regressions.
+Below is R code from Kane R course on bigmemory analytics:
+```{r MAR quick check, echo=TRUE}
+# Our dependent variable
+is_missing <- rbinom(1000, 1, 0.5)
+# Our independent variables
+data_matrix <- matrix(rnorm(1000*10), nrow = 1000,
+ncol = 10)
+# A vector of p-values we'll fill in
+p_vals <- rep(NA, ncol(data_matrix))
+# Perform logistic regression
+for (j in 1:ncol(data_matrix)) {
+s <- summary(glm(is_missing ~ data_matrix[, j]),
+family = binomial)
+p_vals[j] <- s$coefficients[2, 4]
+}
+# Show the p-values
+p_vals
 
+```
 ## 2.Replacing Missing Values with mean or median
 
 Replacing NAs with mean or median values is quite a straightforward, brute force approach. It is not as sophisticated as predicting the missing values by means of prediction methodes, but as a quick and dirty approach it might do. 
@@ -124,7 +142,6 @@ Replacing NAs with mean or median values is quite a straightforward, brute force
 # Let's first exclude the categorical variable Species from our computation:
 iris.mis <- iris.mis[,-5] 
 # We can exclude Species column using subset function: iris.mis <- subset(iris.mis, select = -c(Species))
-
 
 # Let's replace NAs with column vector means using mice() function from mice package:
 mean_compute_mice <- mice::mice(data = iris.mis, method = "mean")
@@ -141,7 +158,6 @@ impute(iris.mis$Sepal.Length, 10) # replace NAs with 10
 # Or we can replace missing values with minimal or maximal values:
 impute(iris.mis$Sepal.Length, min)
 impute(iris.mis$Sepal.Length, max)
-
 
 # Replacing using R standard functionality:
 
@@ -191,8 +207,6 @@ missing_values_imputed_knn <- iris_vector_imputed_knn[na_index]
 RMSE_kNN <- sqrt(mean(missing_values_imputed_knn - missing_values_original)^2)
 
 ```
-
-
 2. NAs replaced by values calculated by randon forest:
 
 ```{r missing value calculation: randon forest with mice, echo=TRUE, message=FALSE, warning=FALSE}
@@ -209,5 +223,4 @@ missing_values_imputed_rf <- iris_vector_imputed_rf[na_index]
 
 # the root mean squared error between two numeric vectors
 RMSE_RF <- sqrt(mean(missing_values_imputed_rf - missing_values_original)^2)
-
 ```
