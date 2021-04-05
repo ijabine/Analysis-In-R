@@ -1,0 +1,97 @@
+---
+title: "Exploratory-Data-Analysis-R Part 2"
+author: "Illarion Jabine"
+date: "4/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Required packages:
+
+* [DataExplorer]
+* [GGally]
+* [graphics]: base R function pairs()
+* [MASS] : dataset Car93
+* [tidyverse]
+
+[DataExplorer]
+Automated data exploration process for analytic tasks and predictive modeling.
+The package scans and analyzes each variable, and visualizes them with typical graphical techniques.
+Common data processing methods are also available to treat and format data.
+
+[GGally]
+'GGally' extends 'ggplot2' by adding several functions to reduce the complexity of combining geometric objects with transformed data.
+Some of these functions include:
+ * a pairwise plot matrix, 
+ * a two group pairwise plot matrix, 
+ * a parallel coordinates plot, 
+ * a survival plot, 
+ * several functions to plot networks.
+
+```{r}
+library(DataExplorer)
+library(GGally)
+library(MASS)
+library(tidyverse)
+```
+
+Get Car93 data set from MASS package and then detach it.
+```{r}
+data(package = "MASS")
+car <- Cars93
+detach("package:MASS", unload = TRUE)
+```
+
+Let's insert some NAs in car data set and save it as car_with_NAs
+```{r}
+car_with_NAs <- edit(car)
+sum(is.na(car_with_NAs))
+```
+
+### 1. Data Explorer package
+
+Function create_report() from DataExplorer package creates a data profiling report. A separate html file is generated with the various elements:
+
+•Basic Statistics 
+ ◦Raw Counts
+ ◦Percentages
+•Data Structure
+•Missing Data Profile
+•Univariate Distribution 
+ ◦Histogram
+ ◦Bar Chart (with frequency)
+ ◦QQ Plot
+•Correlation Analysis
+•Principal Component Analysis
+
+```{r}
+create_report(car_with_NAs)
+```
+
+You can also produce individual reports by calling various plot_ functions:
+```{r}
+# Plot density estimates for each continuous feature
+plot_density(car_with_NAs %>% select(Price,RPM,Rev.per.mile))
+
+# Describe basic information for input data
+plot_intro(car_with_NAs)
+```
+
+### 2. GGally package
+
+This ggplot2 extension package has numerous ggally_ helper functions, that run on top of ggplot2.
+I personally find ggpairs() ggplot2 generalized pairs plot quite powerfull.
+This function is similar to standard R matrix of scatterplots produced by pairs(), but shows extra information like density plots, correlation coefficient, etc:
+
+```{r}
+pairs(x = subset(car, select = c(MPG.city,Price,Horsepower)))
+ggpairs(data = subset(car, select = c(MPG.city,Price,Horsepower)))
+```
+ggpairs() is quite intelegent though, if I add a factor variable "Cylinders" it will understand this fact and adds a bar plot rather than a density plot and box plots in erspective cells:  
+```{r}
+ggpairs(data = subset(car, select = c(MPG.city,Price,Horsepower,Cylinders)))
+```
+
