@@ -23,7 +23,7 @@ vignette(package="dlookr")
 ### Useful links
 https://yuzar-blog.netlify.app/posts/2021-01-30-r-package-reviews-dlookr-diagnose-explore-and-transform-your-data/
 
-```{r Loading libraries and data}
+```{r Loading libraries and data, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(dlookr)
 library(flextable)
@@ -165,6 +165,7 @@ plot_na_pareto(df.na,only_na = TRUE, plot = FALSE) %>% flextable() # only shows 
 Indeed pareto chart shows percentages as per na.percent vector.
 
 2. plot_na_hclust():	Combination chart for missing value
+This plot shows distribution any overlapping of missing values:
 ```{r}
 plot_na_hclust(df.na)
 ```
@@ -182,10 +183,23 @@ for (i in seq_along(df)) {
   df.na[,i] <- prodNA(df[,i],na.percent[i])
 }
 gc()
+
+# Increasing memory limit seems help
 memory.limit(size = 30000)
 ```
 
+To understand this plot better, I will create a small dataset with overlapping NAs:
+```{r}
+df.small <- data.frame(a1=rnorm(10),a2=rnorm(10))
+# manually change some values to NAs
+df.small <- edit(df.small)
+df.small
+plot_na_hclust(df.small)
+```
 
+plot_na_intersect():	Visualize the combinations of missing values across cases.
+The visualization consists of four parts. The bottom left, which is the most basic, visualizes the case of cross(intersection)-combination. The x-axis is the variable including the missing value, and the y-axis represents the case of a combination of variables. And on the marginal of the two axes, the frequency of the case is expressed as a bar graph. Finally, the visualization at the top right expresses the number of variables including missing values in the data set, and the number of observations including missing values and complete cases .
+```{r}
+plot_na_intersect(df.small)
+```
 
-
-plot_na_intersect():	Plot the combination variables that is include missing value
