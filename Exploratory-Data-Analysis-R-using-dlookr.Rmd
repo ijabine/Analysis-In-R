@@ -1,0 +1,191 @@
+---
+title: "Exploratory Data Analysis in R using dlookr package"
+author: "Illarion Jabine"
+date: "10/2/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Required packages:
+
+* [tidyverse]
+* [dlookr]: Tools for Data Diagnosis, Exploration, Transformation
+```{r}
+vignette(package="dlookr")
+```
+
+* [flextable]: Functions for Tabular Reporting. Makes an output prettier.
+* [missForest]: prodNA() function
+
+### Useful links
+https://yuzar-blog.netlify.app/posts/2021-01-30-r-package-reviews-dlookr-diagnose-explore-and-transform-your-data/
+
+```{r Loading libraries and data}
+library(tidyverse)
+library(dlookr)
+library(flextable)
+library(missForest)
+data("diamonds") # dataset from ggplot2
+df <- diamonds
+rm(diamonds) # remove diamonds dataset
+```
+
+### 1. 5 number statistics with dlookr package
+
+describe() function returns descriptive statistics of all numeric variables:
+```{r}
+describe(df)
+```
+
+dlookr also has various plot functions:
+plot_bar_category() - Plot bar chart of categorical variables
+plot_box_numeric() - Plot Box-Plot of numerical variables
+plot_hist_numeric() - Plot histogram of numerical variables
+```{r}
+plot_hist_numeric(df)
+
+# can we have the same with ggplot? Yes we can!
+df.num <- df %>% select_if(is.numeric) 
+df.num %>% pivot_longer(colnames(df.num)) %>%
+  ggplot(aes(x = value)) +    # Draw each column as histogram
+  geom_histogram() + 
+  #scale_y_continuous() +
+  facet_wrap(~ name, scales = "free")
+
+```
+
+
+### 2. General data quality check
+
+dlookr package has a set of generic diagnostic functions.
+diagnose() - generic data quality information, like missing and unique values:
+```{r}
+diagnose(df) %>% flextable()
+```
+diagnose_category() - checks all categorical data in a dataset.
+```{r}
+diagnose_category(df) %>% flextable()
+df %>% select_if(is.factor) %>% group_by(cut) %>% summarise(n=n())
+```
+diagnose_numeric() - diagnose all numeric variables:
+```{r}
+diagnose_numeric(df) %>% flextable()
+```
+Basically we can select only numeric columns (or categorical) using select_if() or summarise_if() or across() from dplyr:
+```{r}
+df %>% select_if(is.numeric) %>% summarise(across(.cols = everything(),list(min = min, mean = mean, median = median), .names = "{.col}.{.fn}"))
+df %>% select_if(is.numeric) %>% summarise_all((list(min,max)))
+```
+
+
+### 3.Outlier analysis
+
+```{r}
+df %>% diagnose_numeric() %>% filter(variables == "x") %>% select(outlier) 
+```
+
+In x variable there are 32 outliers. We can analyze them further using R base functionality:
+
+```{r}
+boxplot.res <- boxplot(df$x)
+length(boxplot.res$out) # number of outliers in x variable. We pull from an object created by boxplot() function. Very handy.
+# Or we can calculate outliers like that:
+df$x[(df$x < quantile(df$x,0.25) - 1.5*IQR(df$x))|(df$x > quantile(df$x,0.75) +1.5*IQR(df$x))]
+
+```
+
+dlookr package also has a funcition to analyze outliers.
+
+To locate what columns contain outliers:
+```{r}
+find_outliers(df,index = FALSE) # if index = FALSE, function returns column names.
+```
+
+diagnose_outlier() as output produces outliers count, outliers ratio, outliers mean, mean with and without outliers.
+
+```{r}
+diagnose_outlier(df) %>% flextable()
+# better with rounding 
+diagnose_outlier(df) %>% mutate(across(where(is.double),round))  %>% flextable()
+```
+From outlier diagnose we can clearly see that price variable is heavily influenced by them.
+
+Should yo want to plot box plots and histograms with and without outliers, use plot_outlier() function:
+```{r}
+df %>% plot_outlier() # for all numeric variables
+df %>% select(price) %>% plot_outlier() # for price only
+```
+
+### 4. Missing values
+
+Let's first check if there are any missing values:
+```{r}
+sum(is.na(df))
+summary(df)
+```
+
+No missing values. Let's insert some using prodNA() from missForest package.
+prodNA <-
+function (x, noNA = 0.1) 
+{
+    n <- nrow(x)
+    p <- ncol(x)
+    NAloc <- rep(FALSE, n * p)
+    NAloc[sample(n * p, floor(n * p * noNA))] <- TRUE
+    x[matrix(NAloc, nrow = n, ncol = p)] <- NA
+    return(x)
+}
+```{r}
+df1 <- prodNA(df, noNA = 0.2) # 20% proportion of missing values w.r.t. the number of entries of 'x'.
+length(which(is.na(df1)))/(dim(df1)[1]*dim(df1)[2]) # yeap, 0.2
+rm(df1)
+
+# create a copy of df
+df.na <- df 
+
+# Let's now insert NAs into a new df.na such that in first column there are 50 % NAs, in second column - 40 %, etc. For that we construct a vector of NAs %:
+na.percent <- c(.50,.40,.30,.20,.15,.10,.5,0,0,0)
+
+# in for loop assign NAs with % from na.percent vector
+for (i in seq_along(df)) {
+  df.na[,i] <- prodNA(df[,i],na.percent[i])
+}
+```
+dlookr can produce 3 missing value plots.
+
+1. plot_na_pareto():	Pareto chart for missing value
+```{r}
+plot_na_pareto(df.na)
+plot_na_pareto(df.na,plot = FALSE) # plot = FALSE produce a table as output.
+plot_na_pareto(df.na,only_na = TRUE, plot = FALSE) %>% flextable() # only shows columns with NAs
+```
+Indeed pareto chart shows percentages as per na.percent vector.
+
+2. plot_na_hclust():	Combination chart for missing value
+```{r}
+plot_na_hclust(df.na)
+```
+Unfortunately running plot_na_hclust(df.na) with dim(df.na):
+[1] 53940    10
+Produced an error: "Error: cannot allocate vector of size 9.5 Gb"
+Let's remover all objects and recreate those required:
+```{r}
+rm(list = ls())
+df <- diamonds
+na.percent <- c(.50,.40,.30,.20,.15,.10,.5,0,0,0)
+df.na <- df 
+# in for loop assign NAs with % from na.percent vector
+for (i in seq_along(df)) {
+  df.na[,i] <- prodNA(df[,i],na.percent[i])
+}
+gc()
+memory.limit(size = 30000)
+```
+
+
+
+
+plot_na_intersect():	Plot the combination variables that is include missing value
